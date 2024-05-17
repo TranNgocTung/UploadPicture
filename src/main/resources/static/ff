@@ -1,0 +1,146 @@
+package com.example.tvmanagerment.Model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int productId;
+    private String productName;
+    private Long price;
+    @Lob
+    @Column(name = "imageUrl",length = 1000)
+    private byte[] imageUrl;
+
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created_at_product")
+    private LocalDateTime createdAtProduct;
+    @PrePersist
+    public void prePersist() {
+        try {
+            createdAtProduct = LocalDateTime.now();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setImageUrl(byte[] imageUrl) {
+        if (imageUrl.length > 1000) {
+        }
+        this.imageUrl = imageUrl;
+    }
+    @ManyToOne
+    private ProductCategory category;
+
+}
+
+
+public List<Product> getAllProduct() {
+        List<Product> products = productRepository.findAll();
+        if (products != null) {
+            products.forEach(product -> {
+                if (product.getImageUrl() != null) {
+                    product.setImageUrl(ImageUtils.decompressImage(product.getImageUrl()));
+                }
+            });
+        }
+        return products;
+    }
+
+    public Product findById(int productId) {
+        Optional<Product> optionalProduct = productRepository.findById(productId);
+        if (optionalProduct.isPresent()) {
+            Product product = optionalProduct.get();
+            if (product.getImageUrl() != null) {
+                byte[] imageData = ImageUtils.decompressImage(product.getImageUrl());
+                product.setImageUrl(imageData);
+            }
+            return product;
+        } else {
+            return null;
+        }
+    }
+
+    public Product saveOrUpdateProduct(Product product, MultipartFile file) throws IOException {
+        byte[] compressedData = ImageUtils.compressImage(file.getBytes());
+        product.setImageUrl(compressedData);
+        return productRepository.save(product);
+    }
+
+    public byte[] downloadImage(Integer id)  {
+        Optional<Product> imageData = productRepository.findById(id);
+        if (imageData.isPresent()) {
+            byte[] images = ImageUtils.decompressImage(imageData.get().getImageUrl());
+            return images;
+        }
+        else {
+            throw new RuntimeException("Image not found with id: " + id);
+        }
+    }
+
+//    public Resource loadImageAsResource(String imageUrl) throws IOException {
+//        Path filePath = Paths.get(UPLOAD_DIR).resolve(imageUrl).normalize();
+//        Resource resource = new UrlResource(filePath.toUri());
+//        if (resource.exists() && resource.isReadable()) {
+//            return resource;
+//        } else {
+//            throw new ImageNotFoundException("Image not found or cannot be read with URL: " + imageUrl);
+//        }
+//    }
+
+
+//    public Product findById(int productId) {
+//        Optional<Product> optionalProduct = productRepository.findById(productId);
+//        if (optionalProduct.isPresent()) {
+//            Product product = optionalProduct.get();
+//            if (product.getImageUrl() != null) {
+//                try {
+//                    Resource resource = loadImageAsResource(product.getImageUrl());
+//                    product.setImageUrl(resource.getURL().toString());
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            return product;
+//        } else {
+//            return null;
+//        }
+//    }
+
+{id}
+//        Product product = productService.findById(id);
+//        if (product == null) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
+//        }
+//        return ResponseEntity.ok(product);
+
+
+//    @PutMapping("/{id}")
+//    public ResponseEntity<?> updateProduct(@PathVariable int id,
+//                                           @RequestParam(value = "file", required = false) MultipartFile file,
+//                                           @ModelAttribute ProductDTO productDTO) throws IOException{
+//
+//        Product existingProduct = productService.findById(id);
+//        if (existingProduct == null) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
+//        }
+//        existingProduct.setProductName(productDTO.getProductName());
+//        existingProduct.setPrice(productDTO.getPrice());
+//        if (productDTO.getCategoryId() != 0) {
+//            ProductCategory category = productCategoryService.getCategoryById(productDTO.getCategoryId())
+//                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product category not found"));
+//            existingProduct.setCategory(category);
+//        }
+//        if (file != null && !file.isEmpty()) {
+//            Product updatedProduct = productService.saveOrUpdateProduct(existingProduct, file);
+//            return ResponseEntity.ok(updatedProduct);
+//        } else {
+//            Product updatedProduct = productService.saveOrUpdateProducts(existingProduct);
+//            return ResponseEntity.ok(updatedProduct);
+//        }
+//    }
